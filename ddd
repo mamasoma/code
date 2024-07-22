@@ -1,0 +1,127 @@
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog
+from ttkbootstrap import Style
+
+def update_description(event):
+    mode = mode_combobox.get()
+    desc_text = {
+        "モード1": "モード1が選択されました",
+        "モード2": "モード2が選択されました"
+    }
+    desc_entry.delete('1.0', tk.END)
+    desc_entry.insert('1.0', desc_text.get(mode, ""))
+
+def browse_folder(entry):
+    folder_path = filedialog.askdirectory()
+    if folder_path:
+        entry.delete(0, tk.END)
+        entry.insert(0, folder_path)
+
+def create_gui():
+    global mode_combobox, desc_entry  # グローバル変数として定義
+
+    # スタイルの設定
+    style = Style(theme='flatly')
+
+    # メインウィンドウの作成
+    root = tk.Tk()
+    root.title("GUI Example")
+
+    # フレームの作成
+    frame1 = ttk.Frame(root, padding="10")
+    frame1.pack(fill=tk.X)
+
+    frame2 = ttk.Frame(root, padding="10")
+    frame2.pack(fill=tk.X)
+
+    frame3 = ttk.Frame(root, padding="10")
+    frame3.pack(fill=tk.X)
+
+    frame4 = ttk.Frame(root, padding="10")
+    frame4.pack(fill=tk.X)
+
+    # フレーム1の内容
+    ttk.Label(frame1, text="こんにちは。", anchor="w").pack(fill=tk.X)
+
+    # フレーム2の内容
+    mode_label = ttk.Label(frame2, text="動作モード選択", anchor="w")
+    mode_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+
+    desc_label = ttk.Label(frame2, text="説明", anchor="w")
+    desc_label.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+    mode_combobox = ttk.Combobox(frame2, values=["モード1", "モード2"])
+    mode_combobox.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+    mode_combobox.bind("<<ComboboxSelected>>", update_description)
+
+    desc_entry = tk.Text(frame2, width=50, height=3)  # 高さを3行に設定
+    desc_entry.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+
+    # フレーム3の内容
+    setting_label = ttk.Label(frame3, text="設定", anchor="w")
+    setting_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+
+    change_label = ttk.Label(frame3, text="変更", anchor="w")
+    change_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+
+    option_label1 = ttk.Label(frame3, text="オプション", anchor="w")
+    option_label1.grid(row=2, column=0, padx=5, pady=5, sticky="w")
+
+    option_combobox1 = ttk.Combobox(frame3, values=["選択1", "選択2"])
+    option_combobox1.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+
+    option_label2 = ttk.Label(frame3, text="オプション", anchor="w")
+    option_label2.grid(row=2, column=2, padx=5, pady=5, sticky="w")
+
+    option_combobox2 = ttk.Combobox(frame3, values=["選択A", "選択B"])
+    option_combobox2.grid(row=2, column=3, padx=5, pady=5, sticky="w")
+
+    folder_label = ttk.Label(frame3, text="フォルダ", anchor="w")
+    folder_label.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+
+    file_name_label1 = ttk.Label(frame3, text="ファイル名：", anchor="w")
+    file_name_label1.grid(row=4, column=0, padx=5, pady=5, sticky="w")
+
+    folder_entry1 = ttk.Entry(frame3)
+    folder_entry1.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+
+    browse_button1 = ttk.Button(frame3, text="参照", command=lambda: browse_folder(folder_entry1))
+    browse_button1.grid(row=4, column=2, padx=5, pady=5, sticky="w")
+
+    file_name_label2 = ttk.Label(frame3, text="ファイル名：", anchor="w")
+    file_name_label2.grid(row=5, column=0, padx=5, pady=5, sticky="w")
+
+    folder_entry2 = ttk.Entry(frame3)
+    folder_entry2.grid(row=5, column=1, padx=5, pady=5, sticky="w")
+
+    browse_button2 = ttk.Button(frame3, text="参照", command=lambda: browse_folder(folder_entry2))
+    browse_button2.grid(row=5, column=2, padx=5, pady=5, sticky="w")
+
+    file_name_label3 = ttk.Label(frame3, text="ファイル名：", anchor="w")
+    file_name_label3.grid(row=6, column=0, padx=5, pady=5, sticky="w")
+
+    folder_entry3 = ttk.Entry(frame3)
+    folder_entry3.grid(row=6, column=1, padx=5, pady=5, sticky="w")
+
+    browse_button3 = ttk.Button(frame3, text="参照", command=lambda: browse_folder(folder_entry3))
+    browse_button3.grid(row=6, column=2, padx=5, pady=5, sticky="w")
+
+    # フレーム4の内容
+    button_frame = ttk.Frame(frame4)  # ボタン用のフレームを作成
+    button_frame.pack(side=tk.RIGHT, padx=5, pady=5)  # 右寄せ
+
+    save_button = ttk.Button(button_frame, text="保存")
+    save_button.pack(side=tk.RIGHT, padx=5)
+
+    run_button = ttk.Button(button_frame, text="モード実行")
+    run_button.pack(side=tk.RIGHT, padx=5)
+
+    cancel_button = ttk.Button(button_frame, text="キャンセル")
+    cancel_button.pack(side=tk.RIGHT, padx=5)
+
+    # メインループの開始
+    root.mainloop()
+
+if __name__ == "__main__":
+    create_gui()
