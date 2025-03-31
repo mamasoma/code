@@ -1,0 +1,99 @@
+using System;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Net.Sockets;
+
+public class TcpClientModel
+{
+    private TcpClient _client;
+    private NetworkStream _stream;
+    private TaskCompletionSource<string> _ackTcs;
+    private TaskCompletionSource<string> _measurementDoneTcs;
+
+    public event Action<string> DataReceived;  // 通常データ受信イベント
+    public event Action MeasurementCompleted;  // 測定完了イベント
+    public event Action<string> AlarmReceived; // アラーム受信イベント
+
+    public async Task ConnectAsync(string ip, int port)
+    {
+        _client = new TcpClient();
+        await _client.ConnectAsync(ip, port);
+        _stream = _client.GetStream();
+        _ = StartReceiving(CancellationToken.None);
+    }
+
+    private async Task StartReceiving(CancellationToken token)
+    {
+        byte[] buffer = new byte[1024];
+        StringBuilder dataBuffer = new StringBuilder();
+
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length, token);
+                if (bytesRead > 0)
+                {
+                    string receivedText = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                    dataBuffer.Append(receivedText);
+
+                    // メッセージの終端を確認
+                    if (dataBuffer.ToString().EndsWith("\r\n"))
+                    {
+                        string fullMessage = dataBuffer.ToString().Trim();
+                        dataBuffer.Clear();
+
+                        if (fullMessage.StartsWith("ACK"))
+                        {
+                            _ackTcs?.TrySetResult(fullMessage);
+                        }
+                        else if (fullMessage.StartsWith("DAT"))
+                        {
+                            DataReceived?.Invoke(fullMessage);
+                            await SendAckAsync(); // 測定データにACKを返す
+                        }
+                        else if (fullMessage.StartsWith("END"))
+                        {
+                            await SendAckAsync(); // 測定完了ACK
+                            _measurementDoneTcs?.TrySetResult(fullMessage);
+                        }
+                        else if (fullMessage.StartsWith("ALM"))
+                        {
+                            AlarmReceived?.Invoke(fullMessage);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"受信エラー: {ex.Message}");
+                break;
+            }
+        }
+    }
+
+    public async Task<string> SendCommandAndWaitForAckAsync(string command)
+    {
+        _ackTcs = new TaskCompletionSource<string>();
+
+        byte[] data = Encoding.ASCII.GetBytes(command + "\r\n");
+        await _stream.WriteAsync(data, 0, data.Length);
+        await _stream.FlushAsync();
+
+        return await _ackTcs.Task.WaitAsync(TimeSpan.FromSeconds(2)); // 2秒ACK待ち
+    }
+
+    private async Task SendAckAsync()
+    {
+        byte[] ack = Encoding.ASCII.GetBytes("ACK\r\n");
+        await _stream.WriteAsync(ack, 0, ack.Length);
+        await _stream.FlushAsync();
+    }
+
+    public async Task WaitForMeasurementCompletionAsync()
+    {
+        _measurementDoneTcs = new TaskCompletionSource<string>();
+        await _measurementDoneTcs.Task.WaitAsync(TimeSpan.FromSeconds(10)); // 10秒待機
+    }
+}
