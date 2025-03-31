@@ -1,0 +1,49 @@
+public class MainViewModel : ViewModelBase
+{
+    private TcpClientModel _tcpClient;
+    public ObservableCollection<string> Logs { get; set; } = new ObservableCollection<string>();
+
+    public MainViewModel()
+    {
+        _tcpClient = new TcpClientModel();
+        _tcpClient.DataReceived += (msg) => Logs.Add($"測定データ受信: {msg}");
+        _tcpClient.AlarmReceived += OnAlarmReceived;
+        _tcpClient.MeasurementCompleted += OnMeasurementCompleted;
+
+        Task.Run(() => _tcpClient.ConnectAsync("192.168.1.10", 502));
+    }
+
+    public async Task StartMeasurement()
+    {
+        Logs.Add("計測開始");
+
+        // スタートコマンド送信 & ACK 待機
+        string ack = await _tcpClient.SendCommandAndWaitForAckAsync("STA");
+        Logs.Add($"ACK 受信: {ack}");
+
+        // 測定完了を待つ
+        await _tcpClient.WaitForMeasurementCompletionAsync();
+
+        Logs.Add("計測完了");
+    }
+
+    public async Task StopMeasurement()
+    {
+        Logs.Add("計測停止");
+
+        // 停止コマンド送信 & ACK 待機
+        string ack = await _tcpClient.SendCommandAndWaitForAckAsync("STOP");
+        Logs.Add($"ACK 受信: {ack}");
+    }
+
+    private async void OnAlarmReceived(string alarmMessage)
+    {
+        Logs.Add($"アラーム発生: {alarmMessage}");
+        await StopMeasurement();
+    }
+
+    private void OnMeasurementCompleted()
+    {
+        Logs.Add("測定が完了しました！");
+    }
+}
